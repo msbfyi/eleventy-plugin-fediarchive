@@ -34,7 +34,11 @@ module.exports = (eleventyConfig, options) => {
 		cacheLocation: `.cache/${options.service}.json` 
 	};
 
-	const MASTODON_STATUS_API = `${config.host}/api/v1/accounts/${config.userId}/statuses`;
+	let MASTODON_STATUS_API = `${config.host}/api/v1/accounts/${config.userId}/statuses`;
+	
+	if (config.service === 'pixelfed') {
+		MASTODON_STATUS_API = `${config.host}/api/pixelfed/v1/accounts/${config.userId}/statuses`;
+	}
 
 	const formatTimeline = (timeline) => {
 		const filtered = timeline.filter(
