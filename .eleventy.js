@@ -4,8 +4,7 @@ const unionBy = require('lodash/unionBy');
 
 const RESPONSE_SIZE = 40;
 
-module.exports = (eleventyConfig) => {
-	module.exports = (eleventyConfig, options) => {
+module.exports = (eleventyConfig, options) => {
 	if (!options.host) {
 		console.error('No URL provided for the Mastodon server.');
 		return;
