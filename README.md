@@ -1,4 +1,4 @@
-# eleventy-plugin-mastoarchive
+# eleventy-plugin-fediarchive
 
 > Fetch your own public posts from Mastodon so you can display them on your personal website.
 
@@ -7,16 +7,16 @@
 First install the plugin in your project:
 
 ```shell
-npm i eleventy-plugin-mastoarchive
+npm i eleventy-plugin-fediarchive
 ```
 
 Then include it in your Eleventy project file
 
 ```js
-const mastoArchive = require('eleventy-plugin-mastoarchive');
+const fediarchive = require('eleventy-plugin-fediarchive');
 
 module.exports = (eleventyConfig) => {
-  eleventyConfig.addPlugin(mastoArchive, {
+  eleventyConfig.addPlugin(fediarchive, {
     host: MASTODON_SERVER,
     userId: MASTODON_USER_ID,
     removeSyndicates: ['example.com'],

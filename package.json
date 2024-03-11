@@ -1,7 +1,7 @@
 {
-  "name": "eleventy-plugin-mastoarchive",
+  "name": "eleventy-plugin-fediarchive",
   "version": "0.2.0",
-  "description": "Expose your Mastodon posts to 11ty as a global data object",
+  "description": "Expose your Fediverse posts to 11ty as a global data object",
   "main": ".eleventy.js",
   "scripts": {
     "start": "eleventy --serve",
@@ -15,11 +15,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/declanbyrd/eleventy-plugin-mastoarchive.git"
+    "url": "git+https://github.com/msbfyi/eleventy-plugin-fediarchive.git"
   },
   "author": {
-    "name": "Declan Byrd",
-    "url": "https://declanbyrd.co.uk"
+    "name": "Michel Sean Becker",
+    "url": "https://msb.fyi"
   },
   "license": "ISC",
   "devDependencies": {
