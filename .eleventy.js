@@ -4,7 +4,8 @@ const unionBy = require('lodash/unionBy');
 
 const RESPONSE_SIZE = 40;
 
-module.exports = (eleventyConfig, options) => {
+module.exports = (eleventyConfig) => {
+	module.exports = (eleventyConfig, options) => {
 	if (!options.host) {
 		console.error('No URL provided for the Mastodon server.');
 		return;
@@ -13,14 +14,26 @@ module.exports = (eleventyConfig, options) => {
 		console.error('No userID provided.');
 		return;
 	}
-
+	if (!options.site) {
+		console.error('No site name provided. Defaulting to Mastodon.');
+		options.site = 'Mastodon';
+		return;
+	}
+	if (!options.service) {
+		console.error('No service name provided. Defaulting to Mastodon.');
+		options.service = 'mastodon';
+		return;
+	}
 	const defaults = {
 		removeSyndicates: [],
-		cacheLocation: '.cache/mastodon.json',
 		isProduction: true,
 	};
-
-	const config = { ...defaults, ...options };
+		
+	const config = { 
+		...defaults, 
+		...options, 
+		cacheLocation: `.cache/${options.service}.json` 
+	};
 
 	const MASTODON_STATUS_API = `${config.host}/api/v1/accounts/${config.userId}/statuses`;
 
@@ -47,9 +60,13 @@ module.exports = (eleventyConfig, options) => {
 				id: post.id,
 				content: post.content,
 				source_url: post.url,
-				site: 'Mastodon',
+				site: config.site,
+				site_url: config.host,
+				service: config.service,
 				media: images,
 				emojis: customEmojis,
+				via: post.application?.name,
+				via_url: post.application?.website,
 			};
 		});
 		const goodPosts = formatted.filter((post) => {
@@ -62,11 +79,11 @@ module.exports = (eleventyConfig, options) => {
 		return goodPosts;
 	};
 
-	const fetchAllMastodonPosts = async () => {
+	const fetchAllFediPosts = async () => {
 		let posts = [];
 		let nextResponse = posts;
 		do {
-			nextResponse = await fetchMastodonPosts({
+			nextResponse = await fetchFediPosts({
 				beforePost: nextResponse[nextResponse.length - 1] || undefined,
 			});
 			// mergePosts expects a cached object {lastfetched: ..., posts: ...} as the first parameter
@@ -75,14 +92,14 @@ module.exports = (eleventyConfig, options) => {
 		return posts;
 	};
 
-	const fetchMastodonPosts = async ({
+	const fetchFediPosts = async ({
 		lastPost = undefined,
 		beforePost = undefined,
 	}) => {
 		const queryParams = new URLSearchParams({
 			limit: `${RESPONSE_SIZE}`,
-			exclude_replies: 'true',
-			exclude_reblogs: 'true',
+			exclude_replies: config.exclude_replies || 'true',
+			exclude_reblogs: config.exclude_reblogs || 'true',
 		});
 		if (lastPost) {
 			queryParams.set('since_id', lastPost.id);
@@ -97,10 +114,10 @@ module.exports = (eleventyConfig, options) => {
 		if (response.ok) {
 			const feed = await response.json();
 			const timeline = formatTimeline(feed);
-			console.log(`>>> ${timeline.length} new mastodon posts fetched`);
+			console.log(`>>> ${timeline.length} new ${config.service} posts fetched`);
 			return timeline;
 		}
-		console.warn('>>> unable to fetch mastodon posts', response.statusText);
+		console.warn(`>>> unable to fetch ${config.service} posts`, response.statusText);
 		return null;
 	};
 
@@ -124,7 +141,7 @@ module.exports = (eleventyConfig, options) => {
 		fs.writeFile(config.cacheLocation, fileContent, (err) => {
 			if (err) throw err;
 			console.log(
-				`>>> ${data.posts.length} mastodon posts in total are now cached in ${config.cacheLocation}`
+				`>>> ${data.posts.length} ${config.service} posts in total are now cached in ${config.cacheLocation}`
 			);
 		});
 	};
@@ -137,13 +154,13 @@ module.exports = (eleventyConfig, options) => {
 			.reverse();
 	};
 
-	eleventyConfig.addGlobalData('mastodon', async () => {
+	eleventyConfig.addGlobalData(config.service, async () => {
 		let lastPost;
-		console.log('>>> Reading mastodon posts from cache...');
+		console.log(`>>> Reading ${config.service} posts from cache...`);
 		const cache = readFromCache();
 
 		if (cache.posts.length) {
-			console.log(`>>> ${cache.posts.length} mastodon posts loaded from cache`);
+			console.log(`>>> ${cache.posts.length} ${config.service} posts loaded from cache`);
 			lastPost = cache.posts[0];
 		}
 
@@ -152,24 +169,24 @@ module.exports = (eleventyConfig, options) => {
 			let feed;
 			if (cache.posts.length === 0) {
 				console.log(
-					'>>> Creating a complete archive of your mastodon posts...'
+					`>>> Creating a complete archive of your ${config.service} posts...`
 				);
-				feed = await fetchAllMastodonPosts();
+				feed = await fetchAllFediPosts();
 				console.log(
 					`>>> Archive containing ${feed.length} posts has been fetched...`
 				);
 			} else {
-				console.log('>>> Checking for new mastodon posts...');
-				feed = await fetchMastodonPosts({ lastPost });
+				console.log(`>>> Checking for new ${config.service} posts...`);
+				feed = await fetchFediPosts({ lastPost });
 			}
 			if (feed) {
-				const mastodonPosts = {
+				const fediPosts = {
 					lastFetched: new Date().toISOString(),
 					posts: mergePosts(cache, feed),
 				};
 
-				writeToCache(mastodonPosts);
-				return mastodonPosts;
+				writeToCache(fediPosts);
+				return fediPosts;
 			}
 		}
 
